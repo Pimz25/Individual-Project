@@ -1,0 +1,110 @@
+/* Relative */
+.boxR {
+  width: 100px;
+  height: 100px;
+  color: white;
+  /* căn giữa text ở các khối */
+  display: flex;
+  /* căn giữa theo chiều ngang */
+  justify-content: center;
+  /* căn giữa theo chiều dọc */
+  align-items: center;
+}
+.boxR1 {
+  background: red;
+}
+.boxR2 {
+  background: blue;
+  position: relative;
+  left: 50px;
+  top: -30px;
+}
+.boxR3 {
+  background: green;
+}
+
+/* Absolute */
+.Absolute {
+  background-color: aquamarine;
+  /* đặt trạng thái cho tổ tiên */
+  position: relative;
+}
+.boxA {
+  width: 100px;
+  height: 100px;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.boxA1 {
+  background: red;
+}
+.boxA2 {
+  background: blue;
+  /* tách ra một mặt phẳng mới */
+  position: absolute;
+  left: 100px;
+}
+.boxA3 {
+  background: green;
+}
+
+/* Fixed */
+.mess-bottom a {
+  font-size: 2rem;
+  color: #0082ff;
+  position: fixed;
+  bottom: 15px;
+  right: 20px;
+}
+
+/* z-index */
+.index {
+  position: relative;
+}
+.boxZ {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  position: absolute;
+}
+.boxZ1 {
+  width: 300px;
+  height: 300px;
+  background: red;
+  z-index: 1;
+}
+.boxZ2 {
+  width: 200px;
+  height: 200px;
+  background: blue;
+  z-index: 3;
+}
+.boxZ3 {
+  width: 100px;
+  height: 100px;
+  background: green;
+  z-index: 2;
+  left: 170px;
+  top: 285px;
+}
+
+/* Sticky */
+.sticky {
+  margin-top: 320px;
+}
+h2 {
+  background-color: yellow;
+  /* tạo hiệu ứng sticky cho h2
+   -> h2 chỉ dính vào phần tử cha có thanh cuốn - scroll bar - gần nhất*/
+  position: sticky;
+  top: 0;
+}
+.content {
+  background-color: paleturquoise;
+  width: 500px;
+  height: 500px;
+  overflow: auto;
+}
