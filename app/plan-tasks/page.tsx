@@ -1,6 +1,6 @@
 'use client'
 
-import PlaningTasks from '@/components/PlaningTasks/PlaningTasks'
+import PlaningTasks from '@/components/plan-tasks/plan-tasks'
 
 export default function Home() {
   return (

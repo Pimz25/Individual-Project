@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
-import { AlignJustify, ChevronDown } from 'lucide-react'
+import { AlignJustify, ChevronDown, PencilLine, Trash2 } from 'lucide-react'
 import { Input } from '../ui/input'
 import {
   Table,
@@ -29,6 +29,8 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
@@ -37,6 +39,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
+import { Separator } from '../ui/separator'
 
 export default function PlaningTasks() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -52,10 +55,11 @@ export default function PlaningTasks() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const columns = ['Task name', 'Description', 'Last updated', 'Status', '']
   const [sheetSide, setSheetSide] = useState<'right' | 'bottom'>('bottom')
+  const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
     const handleResize = () => {
-      setSheetSide(window.innerWidth >= 1240 ? 'right' : 'bottom')
+      setSheetSide(window.innerWidth >= 1024 ? 'right' : 'bottom')
     }
 
     handleResize() // initial
@@ -73,6 +77,7 @@ export default function PlaningTasks() {
         description:
           'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eum aspernatur nobis nam et eveniet sed quis, praesentium mollitia magni distinctio provident minima totam tempore. Doloribus fugit quae voluptatem temporibus nemo.', // ← Add this
         updated: updateTime(),
+        created: updateTime(),
         status: 'Planing',
       },
     ]
@@ -179,7 +184,7 @@ export default function PlaningTasks() {
               if (e.key === 'Enter') addTask()
             }}
           />
-          <Button onClick={addTask} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={addTask} variant="primary">
             Add
           </Button>
         </div>
@@ -345,8 +350,8 @@ export default function PlaningTasks() {
                             onDragEnd={() => setDraggedTaskId(null)}
                             variant="link"
                             size="icon"
-                            className="opacity-70 hover:cursor-pointer hover:opacity-100"
-                            aria-label={`Drag ${task.name}`}
+                            className="opacity-70 hover:opacity-100"
+                            aria-Label={`Drag ${task.name}`}
                           >
                             <AlignJustify className="h-5 w-5" />
                           </Button>
@@ -375,77 +380,127 @@ export default function PlaningTasks() {
       <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <SheetContent
           side={sheetSide}
-          className="text-base w-full md:w-[500px]"
+          className={`overflow-auto h-3/4 px-8 py-5 sm:h-auto ${sheetSide === 'right' ? 'lg:w-2/5' : 'w-full'}`}
         >
-          <SheetHeader>
-            <SheetTitle>Edit Task</SheetTitle>
+          <SheetHeader className="p-0">
+            <SheetTitle className="text-3xl">Edit Task</SheetTitle>
             <SheetDescription className="text-sm text-muted-foreground">
               Modify task details and save your changes.
             </SheetDescription>
           </SheetHeader>
-
+          <Separator />
           {selectedTask && (
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
               {/* Name Input */}
               <div>
-                <label className="text-sm font-medium">Task Name</label>
-                <Input
-                  value={selectedTask.name}
-                  onChange={(e) =>
-                    setSelectedTask({ ...selectedTask, name: e.target.value })
-                  }
-                  className="mt-1"
-                />
+                <Label className="text-xl">Task Name</Label>
+                {isEditing ? (
+                  <Input
+                    value={selectedTask.name}
+                    onChange={(e) =>
+                      setSelectedTask({ ...selectedTask, name: e.target.value })
+                    }
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="text-muted-foreground mt-1">
+                    {selectedTask.name}
+                  </p>
+                )}
               </div>
 
               {/* Description Input */}
               <div>
-                <label className="text-sm font-medium">Description</label>
-                <Input
-                  value={selectedTask.description ?? ''}
-                  onChange={(e) =>
-                    setSelectedTask({
-                      ...selectedTask,
-                      description: e.target.value,
-                    })
-                  }
-                  className="mt-1"
-                  placeholder="Enter a description..."
-                />
+                <Label className="text-xl">Description</Label>
+                {isEditing ? (
+                  <Textarea
+                    value={selectedTask.description ?? ''}
+                    onChange={(e) =>
+                      setSelectedTask({
+                        ...selectedTask,
+                        description: e.target.value,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="mt-1 text-muted-foreground">
+                    {selectedTask.description || <em>No description</em>}
+                  </p>
+                )}
               </div>
 
-              {/* Updated Timestamp (read-only) */}
-              <div>
-                <label className="text-sm font-medium">Last Updated</label>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {selectedTask.updated.date} – {selectedTask.updated.time}
-                </p>
+              {/* Time (read-only) */}
+              <div className="flex justify-between">
+                {/* Created Timestamp */}
+                <div>
+                  <Label className="text-xl">Created</Label>
+                  <p className="mt-1 text-muted-foreground">
+                    {selectedTask.created.date} – {selectedTask.created.time}
+                  </p>
+                </div>
+
+                {/* Updated Timestamp */}
+                <div>
+                  <Label className="text-xl">Last Updated</Label>
+                  <p className="mt-1 text-muted-foreground">
+                    {selectedTask.updated.date} – {selectedTask.updated.time}
+                  </p>
+                </div>
               </div>
 
-              {/* Status Dropdown */}
-              <div>
-                <label className="text-sm font-medium">Status</label>
-                <select
-                  value={selectedTask.status}
-                  onChange={(e) =>
-                    setSelectedTask({
-                      ...selectedTask,
-                      status: e.target.value as typeof selectedTask.status,
-                    })
-                  }
-                  className="mt-1 w-full border px-3 py-2 rounded-md bg-background"
-                >
-                  {['Planing', 'In progress', 'Done'].map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
+              {/* Status Field */}
+              <div className="flex items-center gap-5">
+                <Label className="text-xl">Status</Label>
+                {isEditing ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Badge
+                        variant={
+                          selectedTask.status === 'Planing'
+                            ? 'secondary'
+                            : selectedTask.status === 'In Progress'
+                              ? 'default'
+                              : selectedTask.status === 'Done'
+                                ? 'success'
+                                : 'outline'
+                        }
+                        className="mt-1 italic hover:cursor-pointer"
+                      >
+                        {selectedTask.status}
+                      </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="italic">
+                      {['Planing', 'In Progress', 'Done']
+                        .filter((status) => status !== selectedTask.status)
+                        .map((statusOption, i) => (
+                          <DropdownMenuItem
+                            key={i}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedTask({
+                                ...selectedTask,
+                                status:
+                                  statusOption as typeof selectedTask.status,
+                              })
+                            }}
+                            className="hover:cursor-pointer"
+                          >
+                            {statusOption}
+                          </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <p className="text-muted-foreground italic font-bold bg-secondary px-2 py-1 rounded-md">
+                    {selectedTask.status}
+                  </p>
+                )}
               </div>
             </div>
           )}
-
-          <SheetFooter className="mt-6 flex justify-between">
+          <Separator />
+          <SheetFooter className= "mt-0 p-0 flex flex-row justify-around lg:justify-between">
             <Button
               variant="destructive"
               onClick={() => {
@@ -455,34 +510,46 @@ export default function PlaningTasks() {
                 }
               }}
             >
+              <Trash2 />
               Delete
             </Button>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
               <Button
+                variant="outline"
                 onClick={() => {
-                  if (!selectedTask) return
-                  const updated = tasks.map((t) =>
-                    t.id === selectedTask.id
-                      ? {
-                          ...selectedTask,
-                          updated: updateTime(),
-                        }
-                      : t,
-                  )
-                  setTasks(updated)
-                  setFilterTasks(
-                    activeTab === 'All tasks'
-                      ? updated
-                      : updated.filter((t) => t.status === activeTab),
-                  )
                   setIsDialogOpen(false)
+                  setIsEditing(false) // Reset editing state on cancel
                 }}
               >
-                Save
+                Cancel
               </Button>
+              {isEditing ? (
+                <Button
+                  onClick={() => {
+                    if (!selectedTask) return
+                    const updated = tasks.map((t) =>
+                      t.id === selectedTask.id
+                        ? { ...selectedTask, updated: updateTime() }
+                        : t,
+                    )
+                    setTasks(updated)
+                    setFilterTasks(
+                      activeTab === 'All Tasks'
+                        ? updated
+                        : updated.filter((t) => t.status === activeTab),
+                    )
+                    setIsEditing(false)
+                  }}
+                  variant="primary"
+                >
+                  Save
+                </Button>
+              ) : (
+                <Button variant="warn" onClick={() => setIsEditing(true)}>
+                  <PencilLine />
+                  Edit
+                </Button>
+              )}
             </div>
           </SheetFooter>
         </SheetContent>
