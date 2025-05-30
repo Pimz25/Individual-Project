@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
-import { AlignJustify, ChevronDown, PencilLine, Trash2 } from 'lucide-react'
+import { AlignJustify, PencilLine, Trash2 } from 'lucide-react'
 import { Input } from '../ui/input'
 import {
   Table,
@@ -15,7 +15,7 @@ import {
 import { Badge } from '../ui/badge'
 import {
   DropdownMenu,
-  // DropdownMenuCheckboxItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -44,7 +44,8 @@ import { Separator } from '../ui/separator'
 export default function PlaningTasks() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [filterTasks, setFilterTasks] = useState<Task[]>([])
-  const [input, setInput] = useState('')
+  const [nameInput, setNameInput] = useState('')
+  const [desInput, setDesInput] = useState('')
   const [activeTab, setActiveTab] = useState<
     'All Tasks' | 'In Progress' | 'Done'
   >('All Tasks')
@@ -52,30 +53,43 @@ export default function PlaningTasks() {
   const [selectedTask, setSelectedTask] = useState<null | (typeof tasks)[0]>(
     null,
   )
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const columns = ['Task name', 'Description', 'Last updated', 'Status', '']
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
+  const columns = [
+    'Task Name',
+    'Task Description',
+    'Last Updated',
+    'Status',
+    '',
+  ]
   const [sheetSide, setSheetSide] = useState<'right' | 'bottom'>('bottom')
   const [isEditing, setIsEditing] = useState(false)
+  const [searchValue, setSearchValue] = useState('')
+  const [searchColumns, setSearchColumns] = useState<string[]>(['Task Name'])
 
   useEffect(() => {
     const handleResize = () => {
       setSheetSide(window.innerWidth >= 1024 ? 'right' : 'bottom')
     }
 
+    if (searchColumns.length === 0) {
+      setSearchValue('')
+      filterContext(searchValue)
+    }
+
     handleResize() // initial
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [filterContext, searchColumns, searchValue])
 
   function addTask() {
-    if (input.trim() === '') return
+    if (nameInput.trim() === '' || desInput.trim() === '') return
     const newTasks: typeof tasks = [
       ...tasks,
       {
         id: uuidv4(),
-        name: input.trim(),
-        description:
-          'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eum aspernatur nobis nam et eveniet sed quis, praesentium mollitia magni distinctio provident minima totam tempore. Doloribus fugit quae voluptatem temporibus nemo.', // ← Add this
+        name: nameInput.trim(),
+        description: desInput,
         updated: updateTime(),
         created: updateTime(),
         status: 'Planing',
@@ -89,10 +103,10 @@ export default function PlaningTasks() {
     } else {
       setFilterTasks(newTasks.filter((task) => task.status === activeTab))
     }
-    setInput('')
+    setNameInput('')
   }
 
-  function removeTask(id: string) {
+  function deleteTask(id: string) {
     const newTasks = tasks.filter((task) => task.id !== id)
     setTasks(newTasks)
     if (activeTab === 'All Tasks') {
@@ -102,7 +116,7 @@ export default function PlaningTasks() {
     }
   }
 
-  function handleChangeStatus(
+  function changeStatus(
     id: string,
     status: 'Planing' | 'In Progress' | 'Done',
   ) {
@@ -117,7 +131,39 @@ export default function PlaningTasks() {
     }
   }
 
-  function handleChangeTab(tab: 'All Tasks' | 'In Progress' | 'Done') {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  function filterContext(filter: string) {
+    if (filter.trim() === '') {
+      setFilterTasks(tasks)
+      return
+    }
+
+    const columns = searchColumns.map((col) =>
+      col.split(' ').slice(-1).toString().toLowerCase(),
+    )
+    const lowerFilter = filter.toLowerCase()
+
+    const updatedTasks = tasks.filter((task) =>
+      columns.some((col) => {
+        switch (col) {
+          case 'name':
+            return task.name.toLowerCase().includes(lowerFilter)
+          case 'description':
+            return task.description.toLowerCase().includes(lowerFilter)
+          case 'status':
+            return task.status.toLowerCase().includes(lowerFilter)
+          case 'updated':
+            return task.updated.date.toLowerCase().includes(lowerFilter)
+          default:
+            return false
+        }
+      }),
+    )
+
+    setFilterTasks(updatedTasks)
+  }
+
+  function changeTab(tab: 'All Tasks' | 'In Progress' | 'Done') {
     setActiveTab(tab)
     if (tab === 'All Tasks') {
       setFilterTasks(tasks)
@@ -133,59 +179,18 @@ export default function PlaningTasks() {
     }
   }
 
+  function clearInputs() {
+    setNameInput('')
+    setDesInput('')
+  }
+
   return (
     <>
       <div className="w-[80vw] p-8 my-[10vh] max-h-[80vh] max-w-[1536px] bg-white rounded-lg shadow-lg flex flex-col">
-        <h2 className="text-4xl font-bold mb-6 text-center">Planing Tasks</h2>
-        <div className="flex gap-5 items-center py-4">
-          <Input
-          // placeholder="Filter emails..."
-          // value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
-          // onChange={(event) =>
-          //   table.getColumn('email')?.setFilterValue(event.target.value)
-          // }
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {/* {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })} */}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="flex gap-2 mb-4">
-          <Input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Add new task"
-            className="flex-grow"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') addTask()
-            }}
-          />
-          <Button onClick={addTask} variant="primary">
-            Add
+        <h2 className="text-4xl font-bold mb-4 text-center">Planing Tasks</h2>
+        <div className="text-center">
+          <Button onClick={() => setIsAddTaskOpen(true)} variant="primary">
+            Add New Task
           </Button>
         </div>
 
@@ -195,189 +200,227 @@ export default function PlaningTasks() {
             <span className="text-md mt-2">Start by adding a task above</span>
           </div>
         ) : (
-          <Tabs
-            defaultValue="all-tasks"
-            value={activeTab.replace(' ', '-').toLowerCase()}
-            onValueChange={(val) => {
-              console.log(val)
-              const tab = val
-                .split('-')
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ')
-              console.log(tab)
-              handleChangeTab(tab as 'All Tasks' | 'In Progress' | 'Done')
-            }}
-            className="overflow-hidden relative"
-          >
-            <TabsContent
+          <>
+            <div className="flex gap-5 items-center py-4">
+              <Input
+                placeholder={`Find context${searchColumns.length === 0 ? '...' : searchColumns.length === 1 ? ' with column:' : ' with columns:'} ${searchColumns
+                  .map((col) => col.toLowerCase())
+                  .join(', ')}`}
+                value={searchValue}
+                onChange={(e) => {
+                  setSearchValue(e.target.value)
+                  filterContext(e.target.value)
+                }}
+                className={`w-full ${searchColumns.length === 0 ? 'hover:cursor-move opacity-50' : ''}`}
+                disabled={searchColumns.length === 0}
+              />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">Columns</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="start">
+                  {columns.slice(0, -1).map((col) => (
+                    <DropdownMenuCheckboxItem
+                      key={col}
+                      checked={searchColumns.includes(col)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSearchColumns((prev) => [...prev, col])
+                        } else {
+                          setSearchColumns((prev) =>
+                            prev.filter((item) => item !== col),
+                          )
+                        }
+                      }}
+                    >
+                      {col}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <Tabs
+              defaultValue="all-tasks"
               value={activeTab.replace(' ', '-').toLowerCase()}
-              className="overflow-auto"
+              onValueChange={(val) => {
+                const tab = val
+                  .split('-')
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')
+                changeTab(tab as 'All Tasks' | 'In Progress' | 'Done')
+              }}
+              className="overflow-hidden relative"
             >
-              <Table className="w-full">
-                <TableHeader className="sticky top-0 bg-white z-10">
-                  <TableRow>
-                    {columns.map((col, index) => (
-                      <TableHead
-                        key={col}
-                        className={`text-2xl ${
-                          index === 0 || index === 1
-                            ? 'text-start'
-                            : 'w-fit text-center'
-                        }`}
-                      >
-                        {col}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filterTasks.length === 0 ? (
+              <TabsContent
+                value={activeTab.replace(' ', '-').toLowerCase()}
+                className="overflow-auto"
+              >
+                <Table className="w-full">
+                  <TableHeader className="sticky top-0 bg-white z-10">
                     <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="text-center text-gray-500 italic"
-                      >
-                        No
-                        <span className="font-semibold">
-                          {activeTab === 'In Progress'
-                            ? ' tasks in progress '
-                            : activeTab === 'Done'
-                              ? ' completed tasks '
-                              : ' tasks '}
-                        </span>
-                        yet
-                      </TableCell>
+                      {columns.map((col, index) => (
+                        <TableHead
+                          key={col}
+                          className={`text-2xl ${
+                            index === 0 || index === 1
+                              ? 'text-start'
+                              : 'w-fit text-center'
+                          }`}
+                        >
+                          {col}
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ) : (
-                    filterTasks.map((task) => (
-                      <TableRow
-                        key={task.id}
-                        className="hover:cursor-pointer text-center"
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={() => {
-                          if (!draggedTaskId || draggedTaskId === task.id)
-                            return
-
-                          const draggedIndex = tasks.findIndex(
-                            (t) => t.id === draggedTaskId,
-                          )
-                          const droppedIndex = tasks.findIndex(
-                            (t) => t.id === task.id,
-                          )
-
-                          const reordered = [...tasks]
-                          const [removed] = reordered.splice(draggedIndex, 1)
-                          reordered.splice(droppedIndex, 0, removed)
-
-                          setTasks(reordered)
-                          setFilterTasks(
-                            activeTab === 'All Tasks'
-                              ? reordered
-                              : reordered.filter((t) => t.status === activeTab),
-                          )
-                        }}
-                        onClick={() => {
-                          setSelectedTask(task)
-                          setIsDialogOpen(true)
-                        }}
-                      >
-                        <TableCell className="w-3/12 whitespace-normal break-words text-justify font-bold">
-                          {task.name}
-                        </TableCell>
-                        <TableCell className="whitespace-normal break-words text-justify opacity-70">
-                          {/* {task.description} */}
-                          Lorem ipsum dolor sit amet consectetur, adipisicing
-                          elit. Illo neque saepe labore placeat. Sed possimus
-                          distinctio, dolor minima aperiam ducimus
-                          exercitationem velit dolorem mollitia aut iusto natus
-                          labore dolorum veritatis.
-                        </TableCell>
-                        <TableCell>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div>{task.updated.date}</div>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom">
-                                {task.updated.time}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                        <TableCell className="italic">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <Badge
-                                className="hover:cursor-pointer"
-                                variant={
-                                  task.status === 'Planing'
-                                    ? 'secondary'
-                                    : task.status === 'In Progress'
-                                      ? 'default'
-                                      : task.status === 'Done'
-                                        ? 'success'
-                                        : 'outline'
-                                }
-                              >
-                                {task.status}
-                              </Badge>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="italic">
-                              {['Planing', 'In Progress', 'Done']
-                                .filter((status) => status !== task.status)
-                                .map((statusOption, i) => (
-                                  <DropdownMenuItem
-                                    key={i}
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleChangeStatus(
-                                        task.id,
-                                        statusOption as typeof task.status,
-                                      )
-                                    }}
-                                    className="hover:cursor-pointer"
-                                  >
-                                    {statusOption}
-                                  </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            draggable
-                            onDragStart={() => setDraggedTaskId(task.id)}
-                            onDragEnd={() => setDraggedTaskId(null)}
-                            variant="link"
-                            size="icon"
-                            className="opacity-70 hover:opacity-100"
-                            aria-Label={`Drag ${task.name}`}
-                          >
-                            <AlignJustify className="h-5 w-5" />
-                          </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filterTasks.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          className="text-center text-gray-500 italic"
+                        >
+                          No
+                          <span className="font-semibold">
+                            {activeTab === 'In Progress'
+                              ? ' tasks in progress '
+                              : activeTab === 'Done'
+                                ? ' completed tasks '
+                                : ' tasks '}
+                          </span>
+                          yet
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TabsContent>
+                    ) : (
+                      filterTasks.map((task) => (
+                        <TableRow
+                          key={task.id}
+                          className="hover:cursor-pointer text-center"
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => {
+                            if (!draggedTaskId || draggedTaskId === task.id)
+                              return
 
-            <TabsList className="grid w-full grid-cols-3">
-              {['All Tasks', 'In Progress', 'Done'].map((tab) => {
-                const val = tab.replace(' ', '-').toLowerCase()
-                return (
-                  <TabsTrigger key={val} value={val}>
-                    {tab}
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
-          </Tabs>
+                            const draggedIndex = tasks.findIndex(
+                              (t) => t.id === draggedTaskId,
+                            )
+                            const droppedIndex = tasks.findIndex(
+                              (t) => t.id === task.id,
+                            )
+
+                            const reordered = [...tasks]
+                            const [removed] = reordered.splice(draggedIndex, 1)
+                            reordered.splice(droppedIndex, 0, removed)
+
+                            setTasks(reordered)
+                            setFilterTasks(
+                              activeTab === 'All Tasks'
+                                ? reordered
+                                : reordered.filter(
+                                    (t) => t.status === activeTab,
+                                  ),
+                            )
+                          }}
+                          onClick={() => {
+                            setSelectedTask(task)
+                            setIsSheetOpen(true)
+                          }}
+                        >
+                          <TableCell className="w-3/12 whitespace-normal break-words text-justify font-bold">
+                            {task.name}
+                          </TableCell>
+                          <TableCell className="whitespace-normal break-words text-justify opacity-70">
+                            {task.description.split('\n').map((line, i) => (
+                              <p key={i}>{line}</p>
+                            ))}
+                          </TableCell>
+                          <TableCell>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>{task.updated.date}</div>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                  {task.updated.time}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="italic">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <Badge
+                                  className="hover:cursor-pointer"
+                                  variant={
+                                    task.status === 'Planing'
+                                      ? 'secondary'
+                                      : task.status === 'In Progress'
+                                        ? 'default'
+                                        : task.status === 'Done'
+                                          ? 'success'
+                                          : 'outline'
+                                  }
+                                >
+                                  {task.status}
+                                </Badge>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="italic">
+                                {['Planing', 'In Progress', 'Done']
+                                  .filter((status) => status !== task.status)
+                                  .map((statusOption, i) => (
+                                    <DropdownMenuItem
+                                      key={i}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        changeStatus(
+                                          task.id,
+                                          statusOption as typeof task.status,
+                                        )
+                                      }}
+                                      className="hover:cursor-pointer"
+                                    >
+                                      {statusOption}
+                                    </DropdownMenuItem>
+                                  ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              draggable
+                              onDragStart={() => setDraggedTaskId(task.id)}
+                              onDragEnd={() => setDraggedTaskId(null)}
+                              variant="link"
+                              size="icon"
+                              className="opacity-70 hover:opacity-100"
+                              aria-label={`Drag ${task.name}`}
+                            >
+                              <AlignJustify className="h-5 w-5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+
+              <TabsList className="grid w-full grid-cols-3">
+                {['All Tasks', 'In Progress', 'Done'].map((tab) => {
+                  const val = tab.replace(' ', '-').toLowerCase()
+                  return (
+                    <TabsTrigger key={val} value={val}>
+                      {tab}
+                    </TabsTrigger>
+                  )
+                })}
+              </TabsList>
+            </Tabs>
+          </>
         )}
       </div>
 
-      <Sheet open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent
           side={sheetSide}
           className={`overflow-auto h-3/4 px-8 py-5 sm:h-auto ${sheetSide === 'right' ? 'lg:w-2/5' : 'w-full'}`}
@@ -411,7 +454,7 @@ export default function PlaningTasks() {
 
               {/* Description Input */}
               <div>
-                <Label className="text-xl">Description</Label>
+                <Label className="text-xl">Task Description</Label>
                 {isEditing ? (
                   <Textarea
                     value={selectedTask.description ?? ''}
@@ -425,7 +468,9 @@ export default function PlaningTasks() {
                   />
                 ) : (
                   <p className="mt-1 text-muted-foreground">
-                    {selectedTask.description || <em>No description</em>}
+                    {selectedTask.description.split('\n').map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
                   </p>
                 )}
               </div>
@@ -500,13 +545,13 @@ export default function PlaningTasks() {
             </div>
           )}
           <Separator />
-          <SheetFooter className= "mt-0 p-0 flex flex-row justify-around lg:justify-between">
+          <SheetFooter className="mt-0 p-0 flex flex-row justify-around lg:justify-between">
             <Button
               variant="destructive"
               onClick={() => {
                 if (selectedTask) {
-                  removeTask(selectedTask.id)
-                  setIsDialogOpen(false)
+                  deleteTask(selectedTask.id)
+                  setIsSheetOpen(false)
                 }
               }}
             >
@@ -517,7 +562,7 @@ export default function PlaningTasks() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setIsDialogOpen(false)
+                  setIsSheetOpen(false)
                   setIsEditing(false) // Reset editing state on cancel
                 }}
               >
@@ -551,6 +596,68 @@ export default function PlaningTasks() {
                 </Button>
               )}
             </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
+        <SheetContent
+          side={sheetSide}
+          className={`overflow-auto h-3/4 px-8 py-5 sm:h-auto ${sheetSide === 'right' ? 'lg:w-2/5' : 'w-full'}`}
+        >
+          <SheetHeader className="p-0">
+            <SheetTitle className="text-3xl">Create Task</SheetTitle>
+            <SheetDescription className="text-sm text-muted-foreground">
+              Modify task details and save your changes.
+            </SheetDescription>
+          </SheetHeader>
+          <Separator />
+
+          <div className="flex flex-col gap-4">
+            {/* Name Input */}
+            <div>
+              <Label className="text-xl">Task Name</Label>
+              <Input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Add new task"
+                className="flex-grow"
+              />
+            </div>
+            {/* Description Input */}
+            <div>
+              <Label className="text-xl">Description</Label>
+              <Textarea
+                value={desInput}
+                onChange={(e) => setDesInput(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <Separator />
+          <SheetFooter className="mt-0 p-0 flex flex-row justify-around lg:justify-between">
+            <Button
+              variant="outline"
+              onClick={() => {
+                clearInputs()
+                setIsAddTaskOpen(false)
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="primary"
+              onClick={() => {
+                addTask()
+                clearInputs()
+                setIsAddTaskOpen(false)
+              }}
+            >
+              Add
+            </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
