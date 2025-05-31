@@ -1,6 +1,6 @@
 'use client'
 
-import RainbowButton from '@/components/ui/rainbow-button'
+import RainbowButton from '@/components/rainbow-button'
 
 const webs = [
   { name: 'Planing tasks', href: '/plan-tasks' },

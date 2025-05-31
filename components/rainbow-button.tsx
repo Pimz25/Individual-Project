@@ -12,7 +12,7 @@ export default function RainbowButton({
     <div className="relative inline-block p-[2px] rounded-lg rainbow-border hover:cursor-pointer">
       <div className="rounded-lg overflow-hidden">
         <Link href={href} passHref>
-          <Button className="bg-black text-white hover:bg-black px-6 py-2 w-full hover:cursor-pointer">
+          <Button className="bg-black text-white hover:bg-black px-6 py-2 w-full">
             {text}
           </Button>
         </Link>
