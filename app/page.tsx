@@ -4,7 +4,7 @@ import RainbowButton from '@/components/rainbow-button'
 
 const webs = [
   { name: 'Planing tasks', href: '/plan-tasks' },
-  { name: 'Music Webapp', href: '/music' },
+  { name: 'Music Webapp', href: '/music-app' },
   { name: 'Weather Webapp', href: '/weather' },
 ]
 
