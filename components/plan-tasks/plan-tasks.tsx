@@ -187,7 +187,7 @@ export default function PlaningTasks() {
   return (
     <>
       <div className="w-[80vw] p-8 my-[10vh] max-h-[80vh] max-w-[1536px] bg-white rounded-lg shadow-lg flex flex-col">
-        <h2 className="text-4xl font-bold mb-4 text-center">Planing Tasks</h2>
+        <h1 className="text-4xl font-bold mb-4 text-center">Planing Tasks</h1>
         <div className="text-center">
           <Button onClick={() => setIsAddTaskOpen(true)} variant="primary">
             Add New Task

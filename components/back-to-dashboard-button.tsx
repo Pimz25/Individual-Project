@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { House } from 'lucide-react'
 import { Button } from './ui/button'

@@ -6,8 +6,6 @@ const webs = [
   { name: 'Planing tasks', href: '/plan-tasks' },
   { name: 'Music Webapp', href: '/music' },
   { name: 'Weather Webapp', href: '/weather' },
-  { name: 'Shortest Way', href: '/shortest-way' },
-  { name: 'Sudoku Solver', href: '/sudoku' },
 ]
 
 export default function Home() {
